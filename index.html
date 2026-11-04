@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0f172a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Crypto Tycoon</title>
+<style>
+  :root{
+    --bg:#0f172a; --panel:#1e293b; --panel2:#273549; --line:#334155;
+    --text:#e2e8f0; --muted:#94a3b8; --accent:#38bdf8; --gold:#fbbf24;
+    --green:#4ade80; --red:#f87171;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;}
+  .wrap{max-width:520px;margin:0 auto;padding:12px 14px 90px;min-height:100vh}
+  h1,h2,h3{margin:6px 0}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+  input[type=text],input[type=number]{width:100%;padding:12px;margin:6px 0;border-radius:10px;
+    border:1px solid var(--line);background:var(--panel2);color:var(--text);font-size:16px}
+  button{width:100%;padding:12px;margin:5px 0;border:none;border-radius:10px;font-size:15px;font-weight:600;
+    cursor:pointer;background:var(--panel2);color:var(--text);transition:opacity .15s}
+  button:active{opacity:.7}
+  button.primary{background:#2563eb;color:#fff}
+  button.buy{background:linear-gradient(135deg,#16a34a,#15803d);color:#fff}
+  button.sell{background:linear-gradient(135deg,#dc2626,#b91c1c);color:#fff}
+  button.small{padding:8px;font-size:13px}
+  button:disabled{opacity:.35;cursor:default}
+  .row{display:flex;gap:6px}
+  .row>button{flex:1}
+  .muted{color:var(--muted);font-size:13px}
+  .center{text-align:center}
+  .big{font-size:26px;font-weight:700}
+  .green{color:var(--green)} .red{color:var(--red)} .gold{color:var(--gold)}
+  .hidden{display:none!important}
+  #chart{width:100%;height:170px;background:#0b1220;border-radius:12px;border:1px solid var(--line)}
+  .stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+  .stat{background:var(--panel2);border-radius:10px;padding:8px;text-align:center}
+  .stat .v{font-size:17px;font-weight:700}
+  .stat .l{font-size:11px;color:var(--muted)}
+  #popbar{height:8px;background:var(--panel2);border-radius:6px;overflow:hidden;margin:6px 0}
+  #popfill{height:100%;width:0%;background:linear-gradient(90deg,#f59e0b,#fbbf24);transition:width .3s}
+  #hypebar{height:8px;background:var(--panel2);border-radius:6px;overflow:hidden;margin:6px 0}
+  #hypefill{height:100%;width:0%;background:linear-gradient(90deg,#8b5cf6,#ec4899);transition:width .3s}
+  .tabs{display:flex;gap:4px;margin-bottom:10px}
+  .tab{flex:1;padding:10px 2px;background:var(--panel);border:1px solid var(--line);border-radius:10px;color:var(--muted);font-weight:600;font-size:13px}
+  .tab.active{background:#2563eb;color:#fff;border-color:#2563eb}
+  #news{background:var(--panel2);border-left:4px solid var(--accent);padding:8px 10px;border-radius:8px;font-size:14px;margin:8px 0;min-height:20px}
+  #news.bad{border-left-color:var(--red)}
+  #news.good{border-left-color:var(--green)}
+  .upg{background:var(--panel2);border-radius:10px;padding:10px;margin:8px 0}
+  .upg .t{display:flex;justify-content:space-between;align-items:center;font-weight:600}
+  .lvl{color:var(--gold);font-size:12px}
+  .pips{letter-spacing:2px;font-size:11px}
+  .emo{font-size:26px;margin-right:8px}
+  #toast{position:fixed;bottom:84px;left:50%;transform:translateX(-50%);
+    background:#334155;color:#fff;padding:10px 16px;border-radius:20px;font-size:14px;
+    opacity:0;transition:opacity .3s;pointer-events:none;z-index:50;max-width:90%;text-align:center}
+  .bottombar{position:fixed;bottom:0;left:0;right:0;background:var(--panel);border-top:1px solid var(--line);
+    display:flex;gap:4px;padding:8px 10px;max-width:548px;margin:0 auto}
+  .bottombar button{margin:0;padding:10px 4px;font-size:13px;background:transparent;border:none;color:var(--muted)}
+  .bottombar button.active{color:var(--accent)}
+  .overlay{position:fixed;inset:0;background:rgba(2,6,23,.92);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px}
+  .overlay .card{max-width:420px;width:100%}
+  #installBtn{position:fixed;top:10px;right:10px;z-index:60;width:auto;padding:8px 12px;font-size:12px;background:#fbbf24;color:#1e293b;border-radius:20px}
+  .coinbadge{display:inline-flex;align-items:center;gap:8px;background:var(--panel2);padding:6px 12px;border-radius:20px}
+</style>
+</head>
+<body>
+<button id="installBtn" class="hidden" onclick="doInstall()">📲 Установить</button>
+<div class="wrap">
+
+  <!-- ЭКРАН СОЗДАНИЯ -->
+  <div id="scr-create">
+    <h1 class="center" style="margin-top:30px">🪙 Crypto Tycoon</h1>
+    <p class="center muted">Создай свою монету и стань криптомагнатом</p>
+    <div class="card" style="margin-top:20px">
+      <input type="text" id="coinName" maxlength="24" placeholder="Название монеты (напр. ПельменьCoin)">
+      <input type="text" id="coinTicker" maxlength="5" placeholder="Тикер (напр. PMN)">
+      <button class="primary" onclick="createCoin()">🪙 Создать монету</button>
+      <button id="continueBtn" class="hidden" onclick="loadSave()">▶️ Продолжить прошлую игру</button>
+    </div>
+    <p class="center muted" style="font-size:12px">Прогресс сохраняется автоматически на устройстве</p>
+  </div>
+
+  <!-- ЭКРАН ПРЕЛИНЧА -->
+  <div id="scr-prelaunch" class="hidden">
+    <h2 class="center" style="margin-top:24px">🥚 Монета создана!</h2>
+    <div class="card center">
+      <div class="big gold" id="plName"></div>
+      <div class="muted" id="plTicker"></div>
+      <div style="font-size:52px;margin:14px 0">🚀</div>
+      <p class="muted">О вашей монете пока не знает <b>никто</b>. Цена замерла, рынок спит.<br>
+      Запустите монету — и начинайте её распространять, чтобы график ожил!</p>
+      <div class="stats">
+        <div class="stat"><div class="v">10 000 ₽</div><div class="l">Ваш капитал</div></div>
+        <div class="stat"><div class="v">1.00 ₽</div><div class="l">Цена запуска</div></div>
+      </div>
+      <button class="primary" onclick="launch()">🚀 Запустить монету</button>
+    </div>
+  </div>
+
+  <!-- ИГРА -->
+  <div id="scr-game" class="hidden">
+    <div class="center" style="margin:6px 0 10px">
+      <span class="coinbadge"><span id="hEmo">🪙</span> <b id="hName"></b> <span class="muted" id="hTicker"></span></span>
+    </div>
+
+    <div id="news"></div>
+
+    <canvas id="chart"></canvas>
+
+    <div class="center" style="margin:8px 0">
+      <div class="big" id="price">1.00 ₽</div>
+      <div class="muted">Капитализация: <span id="cap">—</span> · Держателей: <span id="holders">0</span></div>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="v" id="balance">10 000 ₽</div><div class="l">Кошелёк</div></div>
+      <div class="stat"><div class="v" id="portfolio">10 000 ₽</div><div class="l">Всего активов</div></div>
+    </div>
+
+    <div class="muted" style="font-size:12px">📢 Узнаваемость: <b id="popTxt">0%</b></div>
+    <div id="popbar"><div id="popfill"></div></div>
+    <div class="muted" style="font-size:12px">🔥 Хайп: <b id="hypeTxt">0%</b></div>
+    <div id="hypebar"><div id="hypefill"></div></div>
+
+    <div class="tabs">
+      <div class="tab active" data-tab="trade" onclick="setTab('trade')">💱 Торговля</div>
+      <div class="tab" data-tab="promote" onclick="setTab('promote')">📢 Распространение</div>
+      <div class="tab" data-tab="upg" onclick="setTab('upg')">🛠 Прокачка</div>
+    </div>
+
+    <!-- ТОРГОВЛЯ -->
+    <div id="tab-trade">
+      <div class="card">
+        <div class="row" style="justify-content:space-between">
+          <span>Токенов: <b id="tokCount">0</b></span>
+          <span>P&amp;L: <b id="pnl" class="muted">0 ₽</b></span>
+        </div>
+        <div class="muted" style="margin-top:4px">Средняя цена входа: <span id="avg">—</span></div>
+        <input type="number" id="tradeAmt" min="0" placeholder="Сумма в ₽ (пусто = всё)">
+        <button class="buy" onclick="doBuy()">🟢 Купить</button>
+        <button class="sell" onclick="doSell()">🔴 Продать</button>
+        <div class="row">
+          <button class="small" onclick="quickBuy(0.5)">Купить на ½</button>
+          <button class="small" onclick="quickBuy(1)">Купить на всё</button>
+        </div>
+        <div class="row">
+          <button class="small" onclick="quickSell(0.5)">Продать ½</button>
+          <button class="small" onclick="quickSell(1)">Продать всё</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- РАСПРОСТРАНЕНИЕ -->
+    <div id="tab-promote" class="hidden">
+      <div class="card">
+        <p class="muted" style="margin-top:0">Популярность копится навсегда, хайп — временный всплеск, который разгоняет цену. Без узнаваемости рынок мёртв.</p>
+        <div id="promoList"></div>
+      </div>
+    </div>
+
+    <!-- ПРОКАЧКА -->
+    <div id="tab-upg" class="hidden">
+      <div class="card">
+        <p class="muted" style="margin-top:0">Улучшения покупаются за игровой капитал. Каждое звено дороже предыдущего вдвое.</p>
+        <div id="upgList"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- НИЖНЯЯ ПАНЕЛЬ -->
+<div class="bottombar hidden" id="bottombar">
+  <button class="active" data-tab="trade" onclick="setTab('trade')">💱 Торговля</div>
+  <button data-tab="promote" onclick="setTab('promote')">📢 Реклама</button>
+  <button data-tab="upg" onclick="setTab('upg')">🛠 Прокачка</button>
+  <button onclick="saveGame(true)">💾 Сохранить</button>
+</div>
+
+<div id="toast"></div>
+
+<!-- Оверлей банкротства -->
+<div class="overlay hidden" id="overBankrupt">
+  <div class="card center">
+    <div style="font-size:52px">💀</div>
+    <h2>Вы банкрот</h2>
+    <p class="muted">Капитал кончился, а монета никому не нужна. Рекорд: <b id="recordTxt" class="gold"></b></p>
+    <button class="primary" onclick="restart()">🔄 Начать заново</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ================= ДАННЫЕ ================= */
+const EMOJIS = ["🪙","🍕","🐸","🚀","💎","🐶","🐱","🌙","🔥","👽"];
+const PROMOS = [
+  {id:"post",   name:"📝 Пост в сообществе",     cost:200,   pop:2.5, hype:7,  cd:6000,  desc:"Дешёвый способ напомнить о себе"},
+  {id:"ads",    name:"🎯 Таргетированная реклама", cost:1000, pop:7,  hype:15, cd:12000, desc:"Заметный толчок узнаваемости"},
+  {id:"blogger",name:"🎬 Ролик у блогера",        cost:4000,  pop:15, hype:38, cd:25000, risk:0.15, desc:"Большой хайп, но 15% шанс провала"},
+  {id:"listing",name:"🏛 Листинг на бирже",        cost:10000, pop:32, hype:75, cd:40000, desc:"Разовый огромный скачок"}
+];
+const UPGRADES = [
+  {id:"creative",  emo:"🎨", name:"Креативная студия",    desc:"Маркетинг эффективнее на 25% за уровень", max:5, base:800},
+  {id:"smm",       emo:"⏱",  name:"СММ-отдел",            desc:"Перезарядка рекламы быстрее на 15%",      max:4, base:700},
+  {id:"community", emo:"👥", name:"Комьюнити-менеджер",   desc:"Узнаваемость растёт сама",                max:5, base:1200},
+  {id:"bot",       emo:"🤖", name:"Торговый бот",         desc:"Пассивный доход, растёт с популярностью", max:5, base:1500},
+  {id:"audit",     emo:"🔒", name:"Аудит контракта",      desc:"Плохие новости реже и слабее",            max:4, base:2000},
+  {id:"tokenomics",emo:"⚗️", name:"Токеномика 2.0",       desc:"Обвалы мягче",                            max:4, base:1800},
+  {id:"influencers",emo:"📢",name:"Сеть инфлюенсеров",    desc:"Хайп держится дольше",                    max:4, base:2200},
+  {id:"liquidity", emo:"🏦", name:"Своя ликвидность",     desc:"Ваши сделки меньше двигают цену",         max:3, base:2500}
+];
+const NEWS = [
+  {t:"🔥 Знаменитость твитнула про вашу монету!", good:true,  shock:0.15, hype:15},
+  {t:"🎉 Вашу монету добавили на крупную биржу!",  good:true,  shock:0.25, hype:25},
+  {t:"📣 Мем про монету завирусился в соцсетях!",  good:true,  shock:0.20, hype:20},
+  {t:"💼 Криптофонд купил крупный пакет!",         good:true,  shock:0.12, hype:10},
+  {t:"⚠️ В смарт-контракте нашли уязвимость...",   good:false, shock:0.20, hype:-10},
+  {t:"📰 Блогер назвал монету скамом",             good:false, shock:0.18, hype:-15},
+  {t:"🧊 Киты массово сливают монеты!",            good:false, shock:0.25, hype:-20},
+  {t:"😩 Сообщество разочаровано развитием проекта",good:false, shock:0.10, hype:-5}
+];
+
+/* ================= СОСТОЯНИЕ ================= */
+let S = null;          // состояние игры
+let trend = 0;
+let newsTimer = 40;
+let cdLeft = {};       // перезарядки промо
+let timer = null;
+let deferredPrompt = null;
+const TICK = 600;
+
+function freshState(){
+  return {
+    emo:"🪙", name:"", ticker:"",
+    balance:10000, tokens:0, avg:0,
+    price:1, peak:1,
+    pop:0, hype:0,
+    upg:{creative:0,smm:0,community:0,bot:0,audit:0,tokenomics:0,influencers:0,liquidity:0},
+    launched:false, record:10000
+  };
+}
+
+/* ================= УТИЛИТЫ ================= */
+const $ = id => document.getElementById(id);
+const fmt = n => {
+  n = Math.round(n);
+  if (Math.abs(n) >= 1e9) return (n/1e9).toFixed(2) + " млрд ₽";
+  if (Math.abs(n) >= 1e6) return (n/1e6).toFixed(2) + " млн ₽";
+  return n.toLocaleString("ru-RU") + " ₽";
+};
+const fmtP = n => n >= 100 ? n.toFixed(1) + " ₽" : n.toFixed(2) + " ₽";
+const upgCost = u => Math.round(u.base * Math.pow(2, S.upg[u.id]));
+function toast(msg){
+  const t = $("toast");
+  t.textContent = msg; t.style.opacity = 1;
+  clearTimeout(t._h); t._h = setTimeout(()=> t.style.opacity = 0, 2200);
+}
+
+/* ================= СОЗДАНИЕ / ЗАПУСК ================= */
+function createCoin(){
+  const name = $("coinName").value.trim();
+  if(!name){ toast("Придумайте название монеты!"); return; }
+  let ticker = $("coinTicker").value.trim().toUpperCase();
+  if(!ticker) ticker = name.replace(/[^A-Za-zА-Яа-я]/g,"").slice(0,4).toUpperCase() || "COIN";
+  S = freshState();
+  S.name = name; S.ticker = ticker;
+  S.emo = EMOJIS[Math.floor(Math.random()*EMOJIS.length)];
+  $("plName").textContent = S.name;
+  $("plTicker").textContent = "$" + S.ticker;
+  $("scr-create").classList.add("hidden");
+  $("scr-prelaunch").classList.remove("hidden");
+}
+function launch(){
+  S.launched = true;
+  $("scr-prelaunch").classList.add("hidden");
+  $("scr-game").classList.remove("hidden");
+  $("bottombar").classList.remove("hidden");
+  startLoop();
+  saveGame();
+}
+
+/* ================= ИГРОВОЙ ЦИКЛ ================= */
+function startLoop(){
+  clearInterval(timer);
+  timer = setInterval(tick, TICK);
+}
+function tick(){
+  if(!S || !S.launched) return;
+
+  // пассивный рост узнаваемости
+  if(S.upg.community > 0) S.pop = Math.min(100, S.pop + 0.22 * S.upg.community);
+  // пассивный доход бота
+  if(S.upg.bot > 0) S.balance += S.upg.bot * (3 + S.pop * 0.25);
+  // затухание хайпа
+  const decay = 0.975 + 0.006 * S.upg.influencers;
+  S.hype = Math.max(0, S.hype * decay - 0.05);
+
+  // тренд — медленное блуждание
+  trend += (Math.random() - 0.5) * 0.0006;
+  trend = Math.max(-0.004, Math.min(0.004, trend));
+
+  if(S.pop >= 1){
+    const vol = 0.004 + S.pop*0.00006 + S.hype*0.00035;
+    let change = trend + (Math.random()-0.5)*2*vol + S.hype*0.00004;
+    // пузырь: слишком быстрый рост сдувается
+    if(S.price > S.peak*1.5 && change > 0) change *= -(0.4 + 0.2*S.upg.tokenomics);
+    S.price = Math.max(0.01, S.price * (1 + change));
+    if(S.price > S.peak) S.peak = S.price;
+  }
+
+  // новости
+  newsTimer--;
+  if(newsTimer <= 0 && S.pop > 8 && S.hype > 2){
+    fireNews();
+    newsTimer = 30 + Math.floor(Math.random()*50);
+  }
+
+  // перезарядки промо
+  for(const p of PROMOS){ if(cdLeft[p.id] > 0) cdLeft[p.id] -= TICK; }
+
+  // рекорд и банкротство
+  const total = S.balance + S.tokens * S.price;
+  if(total > S.record) S.record = total;
+  if(S.balance < 50 && S.tokens <= 0.000001 && S.upg.bot === 0 && S.price <= 0.05){
+    gameOver();
+  }
+
+  render();
+  if(Math.random() < 0.2) saveGame();
+}
+
+/* ================= НОВОСТИ ================= */
+function fireNews(){
+  let pool = [];
+  for(const n of NEWS){
+    if(!n.good){
+      const chance = Math.pow(0.5, S.upg.audit);
+      if(Math.random() > chance) continue; // аудит защищает
+    }
+    pool.push(n, n, n); // хорошие чуть чаще
+  }
+  if(pool.length === 0) pool = [NEWS[0]];
+  const n = pool[Math.floor(Math.random()*pool.length)];
+  let shock = n.shock;
+  if(!n.good) shock *= (1 - 0.18*S.upg.audit);
+  S.price = Math.max(0.01, S.price * (1 + shock));
+  if(S.price > S.peak) S.peak = S.price;
+  S.hype = Math.max(0, Math.min(100, S.hype + n.hype));
+  const el = $("news");
+  el.textContent = n.t;
+  el.className = n.good ? "good" : "bad";
+}
+
+/* ================= ТОРГОВЛЯ ================= */
+function impact(rub){
+  const base = rub / 20000 * 0.06;
+  return Math.max(0.005, base * (1 - 0.15 * S.upg.liquidity));
+}
+function doBuy(amt){
+  if(!S || !S.launched) return;
+  let rub = amt !== undefined ? amt : (parseFloat($("tradeAmt").value) || S.balance);
+  rub = Math.min(rub, S.balance);
+  if(rub < 10){ toast("Минимум 10 ₽"); return; }
+  const bought = rub / S.price;
+  S.avg = (S.avg * S.tokens + S.price * bought) / (S.tokens + bought);
+  S.tokens += bought; S.balance -= rub;
+  S.price *= (1 + impact(rub));
+  S.hype = Math.min(100, S.hype + rub/2000);
+  $("tradeAmt").value = "";
+  render(); saveGame();
+}
+function doSell(amt){
+  if(!S || !S.launched) return;
+  const worth = S.tokens * S.price;
+  let rub = amt !== undefined ? amt : (parseFloat($("tradeAmt").value) || worth);
+  rub = Math.min(rub, worth);
+  if(S.tokens <= 0.000001 || rub < 10){ toast("Нечего продавать"); return; }
+  S.tokens -= rub / S.price;
+  if(S.tokens < 0.000001){ S.tokens = 0; S.avg = 0; }
+  S.balance += rub;
+  S.price = Math.max(0.01, S.price * (1 - impact(rub)));
+  S.hype = Math.max(0, S.hype - rub/4000);
+  $("tradeAmt").value = "";
+  render(); saveGame();
+}
+function quickBuy(part){ doBuy((S.balance) * part); }
+function quickSell(part){ doSell((S.tokens * S.price) * part); }
+
+/* ================= ПРОДВИЖЕНИЕ ================= */
+function promote(p){
+  if(!S || !S.launched) return;
+  if(cdLeft[p.id] > 0){ toast("Перезарядка: " + Math.ceil(cdLeft[p.id]/1000) + " с"); return; }
+  if(S.balance < p.cost){ toast("Не хватает денег"); return; }
+  S.balance -= p.cost;
+  let gain = p.pop * (1 + 0.25 * S.upg.creative);
+  let hgain = p.hype * (1 + 0.1 * S.upg.creative);
+  if(p.risk && Math.random() < p.risk){
+    gain *= 0.15; hgain *= 0.15;
+    toast("😅 Блогер завалил ролик — эффект почти нулевой");
+  } else {
+    toast("📈 +узнаваемость и хайп!");
+  }
+  S.pop = Math.min(100, S.pop + gain);
+  S.hype = Math.min(100, S.hype + hgain);
+  S.price *= 1 + hgain * 0.0008;
+  if(S.price > S.peak) S.peak = S.price;
+  cdLeft[p.id] = p.cd * Math.pow(0.85, S.upg.smm);
+  renderPromos(); render(); saveGame();
+}
+function renderPromos(){
+  $("promoList").innerHTML = PROMOS.map(p => {
+    const cd = cdLeft[p.id] > 0;
+    const afford = S.balance >= p.cost;
+    const risk = p.risk ? `<div class="muted" style="color:#f59e0b">⚠️ Риск провала ${Math.round(p.risk*100)}%</div>` : "";
+    return `<button class="${afford && !cd ? 'primary' : ''}" onclick="promote(PROMOS[${PROMOS.indexOf(p)}])" ${cd||!afford?"disabled":""}>
+      ${p.name} — ${p.cost.toLocaleString("ru-RU")} ₽
+      ${cd ? `<div class="muted">⏳ ${Math.ceil(cdLeft[p.id]/1000)} с</div>` : ""}
+      ${!cd ? `<div class="muted">${p.desc}</div>` : ""}${risk}
+    </button>`;
+  }).join("");
+}
+
+/* ================= ПРОКАЧКА ================= */
+function buyUpg(u){
+  const cost = upgCost(u);
+  if(S.upg[u.id] >= u.max) return;
+  if(S.balance < cost){ toast("Не хватает денег"); return; }
+  S.balance -= cost;
+  S.upg[u.id]++;
+  toast("✅ " + u.name + " — уровень " + S.upg[u.id]);
+  renderUpgrades(); render(); saveGame();
+}
+function renderUpgrades(){
+  $("upgList").innerHTML = UPGRADES.map((u,i) => {
+    const lvl = S.upg[u.id];
+    const maxed = lvl >= u.max;
+    const cost = upgCost(u);
+    const pips = "●".repeat(lvl) + "○".repeat(u.max - lvl);
+    return `<div class="upg">
+      <div class="t"><span><span class="emo">${u.emo}</span>${u.name}</span><span class="lvl">${lvl}/${u.max}</span></div>
+      <div class="pips gold">${pips}</div>
+      <div class="muted" style="margin:4px 0">${u.desc}</div>
+      ${maxed
+        ? `<div class="muted center">Максимальный уровень ✨</div>`
+        : `<button class="small ${S.balance>=cost?'primary':''}" onclick="buyUpg(UPGRADES[${i}])" ${S.balance>=cost?"":"disabled"}>Купить за ${cost.toLocaleString("ru-RU")} ₽</button>`}
+    </div>`;
+  }).join("");
+}
+
+/* ================= ОТРИСОВКА ================= */
+function setTab(t){
+  ["trade","promote","upg"].forEach(x=>{
+    $("tab-"+x).classList.toggle("hidden", x !== t);
+    document.querySelectorAll(".tab").forEach(el=>el.classList.toggle("active", el.dataset.tab===t));
+    document.querySelectorAll(".bottombar button").forEach(el=>el.classList.toggle("active", el.dataset.tab===t));
+  });
+  if(t==="promote") renderPromos();
+  if(t==="upg") renderUpgrades();
+}
+function render(){
+  if(!S) return;
+  $("hEmo").textContent = S.emo;
+  $("hName").textContent = S.name;
+  $("hTicker").textContent = "$" + S.ticker;
+  const prev = parseFloat($("price").dataset.p || S.price);
+  const up = S.price >= prev;
+  const pe = $("price");
+  pe.textContent = fmtP(S.price);
+  pe.className = "big " + (up ? "green" : "red");
+  pe.dataset.p = S.price;
+  $("cap").textContent = fmt(S.price * Math.max(1000, S.pop*13700));
+  $("holders").textContent = Math.floor(S.pop * 137 + S.hype*37).toLocaleString("ru-RU");
+  $("balance").textContent = fmt(S.balance);
+  const total = S.balance + S.tokens * S.price;
+  $("portfolio").textContent = fmt(total);
+  $("tokCount").textContent = S.tokens.toFixed(4);
+  $("avg").textContent = S.avg > 0 ? fmtP(S.avg) : "—";
+  const pnl = S.tokens > 0 ? (S.price - S.avg) * S.tokens : 0;
+  const pe2 = $("pnl");
+  pe2.textContent = (pnl>=0?"+":"") + fmt(pnl);
+  pe2.className = pnl > 0 ? "green" : (pnl < 0 ? "red" : "muted");
+  $("popTxt").textContent = S.pop.toFixed(0) + "%";
+  $("popfill").style.width = S.pop + "%";
+  $("hypeTxt").textContent = S.hype.toFixed(0) + "%";
+  $("hypefill").style.width = S.hype + "%";
+  drawChart();
+}
+let history = [];
+function drawChart(){
+  const c = $("chart");
+  const dpr = window.devicePixelRatio || 1;
+  const w = c.clientWidth, h = c.clientHeight;
+  if(c.width !== w*dpr){ c.width = w*dpr; c.height = h*dpr; }
+  const ctx = c.getContext("2d");
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,w,h);
+  history.push(S.price);
+  if(history.length > 120) history.shift();
+  if(history.length < 2) return;
+  const min = Math.min(...history)*0.995, max = Math.max(...history)*1.005;
+  const X = i => i/(history.length-1)*w;
+  const Y = v => h - 8 - (v-min)/(max-min || 1)*(h-16);
+  const last = history[history.length-1], first = history[0];
+  const col = last >= first ? "#4ade80" : "#f87171";
+  ctx.beginPath();
+  history.forEach((v,i)=> i ? ctx.lineTo(X(i), Y(v)) : ctx.moveTo(X(i), Y(v)));
+  ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.stroke();
+  ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.closePath();
+  const g = ctx.createLinearGradient(0,0,0,h);
+  g.addColorStop(0, col+"44"); g.addColorStop(1, col+"00");
+  ctx.fillStyle = g; ctx.fill();
+  ctx.font = "12px sans-serif"; ctx.fillStyle = "#64748b";
+  ctx.fillText(fmtP(max), 6, 14);
+  ctx.fillText(fmtP(min), 6, h-4);
+}
+
+/* ================= СОХРАНЕНИЕ ================= */
+const SAVEKEY = "crypto_tycoon_save_v3";
+function saveGame(manual){
+  if(!S || !S.name) return;
+  try{
+    localStorage.setItem(SAVEKEY, JSON.stringify({
+      s:S, history:history.slice(-120), cd:cdLeft, newsTimer, trend
+    }));
+    if(manual) toast("💾 Сохранено");
+  }catch(e){}
+}
+function loadSave(){
+  try{
+    const raw = localStorage.getItem(SAVEKEY);
+    if(!raw) return;
+    const d = JSON.parse(raw);
+    S = d.s; history = d.history || []; cdLeft = d.cd || {}; newsTimer = d.newsTimer || 40; trend = d.trend || 0;
+    $("scr-create").classList.add("hidden");
+    $("scr-game").classList.remove("hidden");
+    $("bottombar").classList.remove("hidden");
+    startLoop(); render(); renderPromos(); renderUpgrades();
+    toast("▶️ Игра загружена");
+  }catch(e){ toast("Не удалось загрузить сохранение"); }
+}
+function restart(){
+  localStorage.removeItem(SAVEKEY);
+  location.reload();
+}
+function gameOver(){
+  clearInterval(timer);
+  $("recordTxt").textContent = fmt(S.record);
+  $("overBankrupt").classList.remove("hidden");
+  saveGame();
+}
+
+/* ================= УСТАНОВКА PWA ================= */
+window.addEventListener("beforeinstallprompt", e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  $("installBtn").classList.remove("hidden");
+});
+function doInstall(){
+  if(deferredPrompt){ deferredPrompt.prompt(); deferredPrompt = null; $("installBtn").classList.add("hidden"); }
+  else toast("Браузер пока не предлагает установку — используйте меню «Добавить на главный экран»");
+}
+if("serviceWorker" in navigator && location.protocol.startsWith("http")){
+  navigator.serviceWorker.register("sw.js").catch(()=>{});
+}
+
+/* ================= СТАРТ ================= */
+if(localStorage.getItem(SAVEKEY)) $("continueBtn").classList.remove("hidden");
+window.addEventListener("resize", ()=>{ if(S) drawChart(); });
+</script>
+</body>
+</html>
