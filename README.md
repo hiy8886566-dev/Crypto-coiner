@@ -6,11 +6,8 @@
 - sw.js — офлайн-режим
 - icon-192.png и icon-512.png — иконки
 
-## Публикация на GitHub Pages
-1. Создайте репозиторий на github.com (Public).
-2. Upload files → перетащите все 5 файлов → Commit changes.
-3. Settings → Pages → Branch: main, папка / (root) → Save.
-4. Через 1–2 минуту игра откроется по адресу https://ВАШ-НИК.github.io/ИМЯ-РЕПО/
+## Веб версия игры:
+- https://hiy8886566-dev.github.io/Crypto-coiner/
 
 ## Установка как приложение
 - Android (Chrome): меню → «Добавить на главный экран» или кнопка 📲 в игре.
